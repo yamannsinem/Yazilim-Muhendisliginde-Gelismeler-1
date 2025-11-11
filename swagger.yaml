@@ -1,0 +1,244 @@
+openapi: 3.0.0
+info:
+  title: Mobil Uygulama Backend API (Flask Prototipi)
+  description: |
+    Kullanıcı girişi, görev/not yönetimi, şifre gücü analizi ve güvenli şifre depolama
+    işlemlerini simüle eden bir RESTful API prototipi için OpenAPI spesifikasyonu.
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:5000/api
+    description: Geliştirme Ortamı (Flask Varsayılan Port)
+tags:
+  - name: Kimlik Doğrulama
+    description: Kullanıcı kayıt, giriş ve çıkış işlemleri.
+  - name: Notlar ve Görevler
+    description: Kullanıcı görevleri ve notları ile ilgili işlemler.
+  - name: Şifre Yöneticisi
+    description: Şifre gücü analizi ve şifreli veri depolama.
+  - name: Hatırlatıcılar
+    description: Hatırlatıcı ekleme işlemleri.
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Kimlik Doğrulama
+      summary: Yeni kullanıcı kaydı.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: test@example.com
+                password:
+                  type: string
+                  example: mysecretpassword
+      responses:
+        '201':
+          description: Kayıt başarılı.
+        '400':
+          description: Eksik parametre.
+        '409':
+          description: E-posta adresi zaten kayıtlı.
+
+  /auth/login:
+    post:
+      tags:
+        - Kimlik Doğrulama
+      summary: 1. Giriş İşlemi
+      description: Kullanıcının sisteme giriş yapmasını sağlar ve oturumu başlatır.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: test@example.com
+                password:
+                  type: string
+                  example: mysecretpassword
+      responses:
+        '200':
+          description: Giriş başarılı.
+        '401':
+          description: Hatalı e-posta veya şifre.
+
+  /auth/logout:
+    post:
+      tags:
+        - Kimlik Doğrulama
+      summary: 6. Çıkış İşlemi
+      description: Aktif kullanıcı oturumunu sonlandırır.
+      responses:
+        '200':
+          description: Çıkış yapıldı veya zaten çıkış yapılmış.
+        '401':
+          description: Giriş yapılmamış.
+
+  /tasks-notes:
+    post:
+      tags:
+        - Notlar ve Görevler
+      summary: 2. Görev / Not Ekleme
+      description: Yeni bir görev veya not veritabanına kaydeder.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: Alışveriş Listesi
+                content:
+                  type: string
+                  nullable: true
+                  example: Süt, Yumurta, Ekmek almayı unutma.
+      responses:
+        '201':
+          description: Görev başarıyla kaydedildi.
+        '400':
+          description: Başlık gereklidir.
+        '401':
+          description: Giriş yapılmamış.
+          
+  /reminders:
+    post:
+      tags:
+        - Hatırlatıcılar
+      summary: 5. Hatırlatıcı Ekleme
+      description: Yeni bir hatırlatıcı oluşturur ve kaydeder.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  example: Önemli e-postayı göndermeyi unutma.
+                due_date:
+                  type: string
+                  format: date-time
+                  example: "2025-12-01T10:00:00Z"
+      responses:
+        '201':
+          description: Hatırlatıcı başarıyla oluşturuldu.
+        '400':
+          description: Hatırlatıcı metni gereklidir.
+        '401':
+          description: Giriş yapılmamış.
+
+  /passwords/analyze:
+    post:
+      tags:
+        - Şifre Yöneticisi
+      summary: 3. Şifre Gücü Analizi
+      description: Kullanıcının girdiği parolanın gücünü değerlendirir ve öneriler sunar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  example: MySuperSecurePassword123!
+      responses:
+        '200':
+          description: Analiz sonucu başarıyla döndü.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  strength:
+                    type: string
+                    enum: [Zayıf, Orta, Güçlü]
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Parola gereklidir.
+
+  /passwords:
+    post:
+      tags:
+        - Şifre Yöneticisi
+      summary: 3. Şifre Kaydetme
+      description: Şifrelenmiş parola verisini veritabanına kaydeder. UI'ın şifreleme yaptığı varsayılır.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_name:
+                  type: string
+                  example: GitHub
+                encrypted_password:
+                  type: string
+                  example: "aes_256_encrypted_string_base64"
+      responses:
+        '201':
+          description: Parola başarıyla kaydedildi.
+        '400':
+          description: Gerekli veriler eksik.
+        '401':
+          description: Giriş yapılmamış.
+    get:
+      tags:
+        - Şifre Yöneticisi
+      summary: 4. Parola Görüntüleme (Listeleme)
+      description: Ek güvenlik adımı (PIN/Biyometrik) sonrası, kullanıcının şifreli parolalarını listeler.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Şifreli parolalar listesi başarıyla döndü.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  passwords:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        service:
+                          type: string
+                        encrypted_data:
+                          type: string
+        '401':
+          description: Giriş yapılmamış.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Oturum açıldıktan sonra alınan JWT tokenı gereklidir. (Prototipte simüle ediliyor.)
