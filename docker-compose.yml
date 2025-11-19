@@ -1,0 +1,40 @@
+# Docker Compose dosya formatının sürümünü belirtir
+version: '3.8'
+
+# Uygulamamızı oluşturan servisleri (hizmetleri) tanımlarız
+services:
+  
+  # 'api' adında bir servis tanımlıyoruz
+  api:
+    # Dockerfile'ın bulunduğu dizini gösterir ('.', mevcut dizin demektir)
+    # Docker Compose, bu dizindeki Dockerfile'ı bularak imajı build edecektir.
+    build: .
+    
+    # Container için kolay hatırlanabilir bir isim veriyoruz
+    container_name: unutkanyoldas-container
+    
+    # Port yönlendirmesi:
+    # "HOST_PORTU:CONTAINER_PORTU"
+    # Bilgisayarınızın 8000 portunu container'ın 8000 portuna bağlar
+    # (Not: Flask 5000 kullanır ama FastAPI/Uvicorn varsayılan olarak 8000 kullanır)
+    ports:
+      - "8000:8000"
+      
+    # Volume (Birim) bağlama:
+    # Bu kısım geliştirme için çok önemlidir.
+    # .:/app : Bulunduğunuz dizindeki TÜM dosyaları container içindeki /app klasörüne bağlar.
+    # BU SAYEDE: Lokal makinenizde main.py dosyasını her değiştirdiğinizde,
+    # değişiklikler anında container'a yansır ve komuttaki --reload parametresi sayesinde
+    # sunucu kendini otomatik olarak yeniden başlatır.
+    volumes:
+      - .:/app
+      
+    # Container başlatılırken çalıştırılacak komut.
+    # Dockerfile'daki CMD komutunu ezer (override eder).
+    # --reload: Kod değişikliklerini canlı izler ve sunucuyu yeniden başlatır.
+    # --host 0.0.0.0: Dış dünyadan erişime açar.
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+    # Container herhangi bir sebeple durursa (hata, sunucu yeniden başlatma)
+    # 'unless-stopped' politikası ile otomatik olarak yeniden başlatılır.
+    restart: unless-stopped
