@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnutkanYoldaş</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const API_URL = "http://127.0.0.1:8000";
+
+        // İkonları güvenli şekilde çağıran bileşen (Hata çıkaran kısmı burası çözüyor)
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const LucideIcon = lucide.icons[name];
+            if (!LucideIcon) return null;
+            return <LucideIcon size={size} className={className} />;
+        };
+
+        function App() {
+            const [view, setView] = React.useState('login');
+            const [user, setUser] = React.useState(null);
+            const [loading, setLoading] = React.useState(false);
+            const [error, setError] = React.useState('');
+            
+            const [tasks, setTasks] = React.useState([]);
+            const [passwords, setPasswords] = React.useState([]);
+            const [reminders, setReminders] = React.useState([]);
+            const [activeTab, setActiveTab] = React.useState('tasks');
+
+            const [formData, setFormData] = React.useState({
+                email: '', password: '', fullName: '', 
+                title: '', description: '', 
+                account: '', username: '', 
+                note: '', time: ''
+            });
+
+            const handleInputChange = (e) => {
+                setFormData({ ...formData, [e.target.name]: e.target.value });
+            };
+
+            const fetchData = async (userId) => {
+                setLoading(true);
+                try {
+                    const [tasksRes, passRes, remRes] = await Promise.all([
+                        fetch(`${API_URL}/api/tasks/${userId}`),
+                        fetch(`${API_URL}/api/passwords/${userId}`),
+                        fetch(`${API_URL}/api/reminders/${userId}`)
+                    ]);
+
+                    if (tasksRes.ok) setTasks(await tasksRes.json());
+                    if (passRes.ok) setPasswords(await passRes.json());
+                    if (remRes.ok) setReminders(await remRes.json());
+                } catch (err) {
+                    setError("API bağlantısı yok. Backend çalışıyor mu?");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+                try {
+                    const res = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: formData.email, password: formData.password })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        setUser({ id: data.user_id, token: data.token, email: formData.email });
+                        setView('dashboard');
+                        fetchData(data.user_id);
+                    } else {
+                        setError(data.detail || "Giriş yapılamadı.");
+                    }
+                } catch (err) {
+                    setError("Sunucu hatası: " + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleRegister = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+                try {
+                    const res = await fetch(`${API_URL}/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            email: formData.email, 
+                            password: formData.password,
+                            full_name: formData.fullName
+                        })
+                    });
+                    
+                    if (res.ok) {
+                        alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+                        setView('login');
+                    } else {
+                        const data = await res.json();
+                        setError(data.detail || "Kayıt hatası.");
+                    }
+                } catch (err) {
+                    setError("Sunucu hatası.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleAddItem = async (type) => {
+                if (!user) return;
+                
+                let endpoint = '';
+                let body = {};
+
+                if (type === 'task') {
+                    endpoint = `/api/tasks/${user.id}`;
+                    body = { title: formData.title, description: formData.description };
+                } else if (type === 'password') {
+                    endpoint = `/api/passwords/${user.id}`;
+                    body = { account: formData.account, username: formData.username, password: formData.password };
+                } else if (type === 'reminder') {
+                    endpoint = `/api/reminders/${user.id}`;
+                    body = { note: formData.note, time: formData.time };
+                }
+
+                try {
+                    const res = await fetch(`${API_URL}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (res.ok) {
+                        fetchData(user.id);
+                        setFormData({ ...formData, title: '', description: '', account: '', username: '', note: '', time: '' }); 
+                    }
+                } catch (err) {
+                    alert("Ekleme başarısız.");
+                }
+            };
+
+            // --- EKRANLAR ---
+
+            if (view === 'login' || view === 'register') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 p-4 font-sans">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 via-orange-500 to-purple-500"></div>
+                            <div className="p-8">
+                                <div className="text-center mb-8">
+                                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-indigo-600 mb-6 shadow-lg shadow-indigo-500/30">
+                                        <Icon name="Brain" size={48} className="text-white" />
+                                    </div>
+                                    <h1 className="text-4xl font-black text-white tracking-tight mb-2">UnutkanYoldaş</h1>
+                                    <p className="text-indigo-200 font-medium">Aklında tutamadıklarını bana bırak.</p>
+                                </div>
+
+                                {error && (
+                                    <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-4 rounded-xl mb-6 text-sm text-center">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <form onSubmit={view === 'login' ? handleLogin : handleRegister} className="space-y-4">
+                                    {view === 'register' && (
+                                        <input 
+                                            name="fullName"
+                                            required
+                                            className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-amber-400 outline-none transition-all"
+                                            placeholder="Adın Soyadın"
+                                            onChange={handleInputChange}
+                                        />
+                                    )}
+                                    <input 
+                                        name="email"
+                                        type="email" 
+                                        required
+                                        className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-amber-400 outline-none transition-all"
+                                        placeholder="E-posta Adresin"
+                                        onChange={handleInputChange}
+                                    />
+                                    <input 
+                                        name="password"
+                                        type="password" 
+                                        required
+                                        className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-amber-400 outline-none transition-all"
+                                        placeholder="Şifren"
+                                        onChange={handleInputChange}
+                                    />
+
+                                    <button 
+                                        disabled={loading}
+                                        className="w-full bg-gradient-to-r from-amber-400 to-orange-600 hover:from-amber-500 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg mt-4"
+                                    >
+                                        {loading ? 'Yükleniyor...' : (view === 'login' ? 'Yoldaşına Bağlan' : 'Yoldaşınla Tanış')}
+                                    </button>
+                                </form>
+
+                                <div className="mt-8 text-center border-t border-white/10 pt-6">
+                                    <button 
+                                        onClick={() => { setError(''); setView(view === 'login' ? 'register' : 'login'); }}
+                                        className="text-indigo-300 hover:text-white text-sm font-semibold transition-colors"
+                                    >
+                                        {view === 'login' ? "Henüz tanışmadık mı? Kayıt Ol" : "Zaten arkadaş mıyız? Giriş Yap"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans text-gray-800">
+                    <aside className="bg-white w-full md:w-72 flex-shrink-0 flex flex-col border-r border-gray-200 shadow-sm z-10">
+                        <div className="p-6 flex items-center gap-3">
+                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                                <Icon name="Brain" size={24} />
+                            </div>
+                            <span className="font-extrabold text-xl text-gray-900 tracking-tight">UnutkanYoldaş</span>
+                        </div>
+                        
+                        <nav className="flex-1 px-4 py-6 space-y-2">
+                            {[
+                                {id: 'tasks', label: 'Yapılacaklar', icon: 'CheckSquare', color: 'blue'},
+                                {id: 'passwords', label: 'Şifre Kasası', icon: 'Lock', color: 'purple'},
+                                {id: 'reminders', label: 'Hatırlatıcılar', icon: 'Bell', color: 'orange'}
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveTab(item.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${
+                                        activeTab === item.id 
+                                        ? `bg-${item.color}-50 text-${item.color}-700 ring-1 ring-${item.color}-200` 
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    <Icon name={item.icon} size={20} className={activeTab !== item.id ? 'text-gray-400' : ''} />
+                                    <span>{item.label}</span>
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div className="p-4 bg-gray-50 m-4 rounded-2xl border border-gray-100">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                                    {user?.email?.[0].toUpperCase()}
+                                </div>
+                                <div className="overflow-hidden">
+                                    <p className="text-xs text-gray-500 truncate">Giriş Yapıldı</p>
+                                    <p className="text-sm font-bold text-gray-800 truncate">{user?.email}</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => { setUser(null); setView('login'); }}
+                                className="w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 transition-colors py-2 rounded-lg text-sm font-semibold"
+                            >
+                                <Icon name="LogOut" size={16} />
+                                Çıkış Yap
+                            </button>
+                        </div>
+                    </aside>
+
+                    <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+                        <header className="mb-8">
+                            <h2 className="text-3xl font-black text-gray-800 mb-2">
+                                {activeTab === 'tasks' && 'Bugün neler yapıyoruz?'}
+                                {activeTab === 'passwords' && 'Dijital Kasan'}
+                                {activeTab === 'reminders' && 'Sakın Unutma!'}
+                            </h2>
+                            <p className="text-gray-500 font-medium">Senin için her şeyi aklımda tutuyorum.</p>
+                        </header>
+
+                        <div className="max-w-5xl">
+                            {/* TASKS PANEL */}
+                            {activeTab === 'tasks' && (
+                                <div className="space-y-6">
+                                    <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-200 flex gap-2">
+                                        <div className="flex-1 bg-gray-50 rounded-xl flex items-center px-4">
+                                            <input 
+                                                name="title"
+                                                value={formData.title}
+                                                onChange={handleInputChange}
+                                                placeholder="Yeni bir görev ekle..." 
+                                                className="bg-transparent border-none outline-none w-full py-3 text-gray-700 font-medium"
+                                            />
+                                        </div>
+                                        <button onClick={() => handleAddItem('task')} className="bg-blue-600 text-white px-6 rounded-xl font-bold">Ekle</button>
+                                    </div>
+                                    <div className="grid gap-4">
+                                        {tasks.map(task => (
+                                            <div key={task.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
+                                                <Icon name="CheckSquare" className="text-blue-500 mt-1" size={24} />
+                                                <div>
+                                                    <h4 className="font-bold text-gray-800 text-lg">{task.title}</h4>
+                                                    <p className="text-gray-500 mt-1">{task.description}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* PASSWORDS PANEL */}
+                            {activeTab === 'passwords' && (
+                                <div className="space-y-6">
+                                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-3xl text-white shadow-xl">
+                                        <h3 className="font-bold text-xl mb-4 flex items-center gap-2">
+                                            <Icon name="Shield" className="text-amber-300" /> Yeni Şifre
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <input name="account" onChange={handleInputChange} value={formData.account} placeholder="Platform" className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-indigo-200" />
+                                            <input name="username" onChange={handleInputChange} value={formData.username} placeholder="Kullanıcı Adı" className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-indigo-200" />
+                                            <input name="password" onChange={handleInputChange} value={formData.password} placeholder="Şifre" className="md:col-span-2 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-indigo-200" />
+                                            <button onClick={() => handleAddItem('password')} className="md:col-span-2 bg-amber-400 text-indigo-900 px-6 py-3 rounded-xl font-bold">Kaydet</button>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {passwords.map(pwd => (
+                                            <div key={pwd.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600">
+                                                        <Icon name="Lock" size={20} />
+                                                    </div>
+                                                    <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-bold">{pwd.strength}</span>
+                                                </div>
+                                                <h4 className="font-bold text-gray-800 text-lg">{pwd.account}</h4>
+                                                <p className="text-gray-500 text-sm font-mono mt-1">{pwd.username}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                             {/* REMINDERS PANEL */}
+                             {activeTab === 'reminders' && (
+                                <div className="space-y-6">
+                                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                                        <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                            <Icon name="Calendar" className="text-orange-600" /> Hatırlatıcı Ekle
+                                        </h3>
+                                        <div className="flex gap-3">
+                                            <input name="note" onChange={handleInputChange} value={formData.note} placeholder="Notun ne?" className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl" />
+                                            <input name="time" onChange={handleInputChange} value={formData.time} placeholder="Zaman" className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl" />
+                                            <button onClick={() => handleAddItem('reminder')} className="bg-orange-500 text-white px-6 rounded-xl font-bold">Kur</button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {reminders.map(rem => (
+                                            <div key={rem.id} className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-orange-400 flex items-center gap-4">
+                                                <Icon name="Bell" className="text-orange-400" />
+                                                <div>
+                                                    <p className="font-bold text-gray-800">{rem.note}</p>
+                                                    <p className="text-sm text-gray-500">{rem.time}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
