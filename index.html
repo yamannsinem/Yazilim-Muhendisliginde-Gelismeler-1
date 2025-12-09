@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UnutkanYoldaş Demo</title>
+<title>Velora Demo</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { font-family: 'Inter', sans-serif; }
@@ -15,108 +15,130 @@
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen flex items-center justify-center p-4">
 
-<!-- Giriş Ekranı -->
 <div id="login-screen" class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
-    <div class="w-20 h-20 bg-indigo-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-3xl font-bold">
-        🧠
-    </div>
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">UnutkanYoldaş</h1>
-    <p class="text-gray-500 mb-8">Demo Sürümü</p>
+    <div class="w-20 h-20 bg-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-3xl font-bold">V</div>
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Velora</h1>
+    <p class="text-gray-500 mb-8">Kişisel Asistanın</p>
 
-    <input type="email" id="email" placeholder="E-posta" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-    <input type="password" id="password" placeholder="Şifre" class="w-full mb-6 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    <input type="email" id="email" placeholder="E-posta (Örn: test@test.com)" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
+    <input type="password" id="password" placeholder="Şifre" class="w-full mb-6 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
 
-    <button id="login-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
-        Giriş Yap
-    </button>
+    <button id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">Giriş Yap</button>
 </div>
 
-<!-- Demo / Ana Sayfa Sekmeli Ekran -->
 <div id="demo-screen" class="hidden bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden">
     <div class="p-6 flex justify-between items-center border-b border-white/20">
-        <h1 class="text-2xl font-bold text-white">UnutkanYoldaş</h1>
+        <h1 class="text-2xl font-bold text-white">Velora</h1>
         <div class="flex gap-2 items-center">
             <div class="tab-button px-4 py-2 rounded-xl font-bold bg-blue-500 text-white" data-tab="tasks">Yapılacaklar</div>
-            <div class="tab-button px-4 py-2 rounded-xl font-bold bg-purple-500 text-white" data-tab="passwords">Şifre Kasası</div>
-            <div class="tab-button px-4 py-2 rounded-xl font-bold bg-orange-500 text-white" data-tab="reminders">Hatırlatıcılar</div>
+            <div class="tab-button px-4 py-2 rounded-xl font-bold bg-purple-500 text-white" data-tab="passwords">Kasa</div>
+            <div class="tab-button px-4 py-2 rounded-xl font-bold bg-orange-500 text-white" data-tab="reminders">Hatırlatıcı</div>
             <button id="back-login" class="px-4 py-2 rounded-xl font-bold bg-red-500 text-white">Çıkış</button>
         </div>
     </div>
 
-    <div class="p-6 text-gray-800">
-        <!-- Tasks -->
+    <div class="p-6 text-gray-800 bg-white/90 min-h-[300px]">
         <div id="tasks" class="tab-content tab-active space-y-4">
-            <div class="p-4 rounded-xl shadow-sm border flex items-center gap-3 bg-blue-50">
-                <div class="w-6 h-6 bg-blue-500 rounded-sm pulse"></div>
-                <div>
-                    <h4 class="font-bold">React çalış</h4>
-                    <p>React ve Tailwind öğren</p>
-                </div>
-            </div>
-            <div class="p-4 rounded-xl shadow-sm border flex items-center gap-3 bg-blue-50">
-                <div class="w-6 h-6 bg-blue-500 rounded-sm pulse"></div>
-                <div>
-                    <h4 class="font-bold">Proje yaz</h4>
-                    <p>Mini HTML demo yap</p>
-                </div>
-            </div>
+            <p class="text-center text-gray-500 mt-10">Yükleniyor...</p>
         </div>
 
-        <!-- Passwords -->
         <div id="passwords" class="tab-content space-y-4">
-            <div class="p-4 rounded-xl shadow-sm border flex justify-between items-center bg-purple-50">
-                <div class="flex items-center gap-3">
-                    <div class="w-6 h-6 bg-purple-500 rounded-sm pulse"></div>
-                    <div>
-                        <h4 class="font-bold">GitHub</h4>
-                        <p>sisi123</p>
-                    </div>
-                </div>
-                <span class="px-2 py-1 rounded bg-gray-200 text-xs">Güçlü</span>
-            </div>
+            <p class="text-center text-gray-500 mt-10">Güvenli Kasa özelliği API'de aktif.</p>
         </div>
 
-        <!-- Reminders -->
         <div id="reminders" class="tab-content space-y-4">
-            <div class="p-4 rounded-xl shadow-sm border flex items-center gap-3 bg-orange-50">
-                <div class="w-6 h-6 bg-orange-500 rounded-sm pulse"></div>
-                <div>
-                    <h4 class="font-bold">Kod yaz</h4>
-                    <p>18:00</p>
-                </div>
-            </div>
+            <p class="text-center text-gray-500 mt-10">Hatırlatıcılar API'de aktif.</p>
         </div>
     </div>
 </div>
 
 <script>
-    // Login / Demo ekran geçişi
+    const API_URL = "http://127.0.0.1:8000"; 
+    let currentUserId = null;
+
     const loginBtn = document.getElementById('login-btn');
     const backLogin = document.getElementById('back-login');
     const loginScreen = document.getElementById('login-screen');
     const demoScreen = document.getElementById('demo-screen');
+    const tasksContainer = document.getElementById('tasks');
 
-    loginBtn.addEventListener('click', () => {
+    // --- GİRİŞ ---
+    loginBtn.addEventListener('click', async () => {
         const email = document.getElementById('email').value.trim();
-        const pass = document.getElementById('password').value.trim();
-        if(!email || !pass) {
-            alert("Lütfen e-posta ve şifre girin!");
+        const password = document.getElementById('password').value.trim();
+
+        if(!email || !password) {
+            alert("Lütfen tüm alanları doldurun!");
             return;
         }
-        loginScreen.classList.add('hidden');
-        demoScreen.classList.remove('hidden');
+
+        try {
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                currentUserId = data.user_id;
+                alert("Hoşgeldin! " + data.mesaj);
+                loginScreen.classList.add('hidden');
+                demoScreen.classList.remove('hidden');
+                loadTasks();
+            } else {
+                alert("Hata: " + (data.detail || "Giriş başarısız"));
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Sunucuya bağlanılamadı! Docker çalışıyor mu?");
+        }
     });
 
+    // --- GÖREVLER ---
+    async function loadTasks() {
+        if (!currentUserId) return;
+        tasksContainer.innerHTML = "<p class='text-center'>Veriler alınıyor...</p>";
+
+        try {
+            const response = await fetch(`${API_URL}/api/tasks/${currentUserId}`);
+            const tasks = await response.json();
+
+            tasksContainer.innerHTML = "";
+
+            if (tasks.length === 0) {
+                tasksContainer.innerHTML = "<div class='text-center p-4 text-gray-500'>Henüz hiç görev yok.<br>Swagger UI üzerinden ekleyebilirsin.</div>";
+                return;
+            }
+
+            tasks.forEach(task => {
+                const html = `
+                <div class="p-4 rounded-xl shadow-sm border flex items-center gap-3 bg-blue-50">
+                    <div class="w-6 h-6 bg-blue-500 rounded-sm pulse"></div>
+                    <div>
+                        <h4 class="font-bold">${task.title}</h4>
+                        <p class="text-sm text-gray-600">${task.description || ''}</p>
+                    </div>
+                </div>`;
+                tasksContainer.innerHTML += html;
+            });
+        } catch (error) {
+            tasksContainer.innerHTML = "<p class='text-red-500'>Veri hatası.</p>";
+        }
+    }
+
+    // --- ÇIKIŞ ---
     backLogin.addEventListener('click', () => {
         demoScreen.classList.add('hidden');
         loginScreen.classList.remove('hidden');
         document.getElementById('email').value = '';
         document.getElementById('password').value = '';
+        currentUserId = null;
     });
 
-    // Sekmeler
+    // --- TABS ---
     const buttons = document.querySelectorAll('.tab-button');
     const contents = document.querySelectorAll('.tab-content');
 
@@ -128,6 +150,5 @@
         });
     });
 </script>
-
 </body>
 </html>
