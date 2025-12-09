@@ -3,152 +3,244 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Velora Demo</title>
+<title>Velora</title>
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
   body { font-family: 'Inter', sans-serif; }
   .tab-content { display: none; }
   .tab-active { display: block; }
-  .tab-button { cursor: pointer; transition: all 0.2s; }
-  .tab-button:hover { transform: scale(1.05); }
-  .pulse { animation: pulse 2s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .btn { transition: 0.2s; cursor: pointer; }
+  .btn:hover { transform: scale(1.05); }
 </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen flex items-center justify-center p-4">
 
-<div id="login-screen" class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
-    <div class="w-20 h-20 bg-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-3xl font-bold">V</div>
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">Velora</h1>
-    <p class="text-gray-500 mb-8">Kişisel Asistanın</p>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen flex items-center justify-center p-6">
 
-    <input type="email" id="email" placeholder="E-posta (Örn: test@test.com)" class="w-full mb-4 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
-    <input type="password" id="password" placeholder="Şifre" class="w-full mb-6 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
+<!-- LOGIN / REGISTER SCREEN -->
+<div id="auth-screen" class="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">Velora</h1>
 
-    <button id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">Giriş Yap</button>
-</div>
-
-<div id="demo-screen" class="hidden bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden">
-    <div class="p-6 flex justify-between items-center border-b border-white/20">
-        <h1 class="text-2xl font-bold text-white">Velora</h1>
-        <div class="flex gap-2 items-center">
-            <div class="tab-button px-4 py-2 rounded-xl font-bold bg-blue-500 text-white" data-tab="tasks">Yapılacaklar</div>
-            <div class="tab-button px-4 py-2 rounded-xl font-bold bg-purple-500 text-white" data-tab="passwords">Kasa</div>
-            <div class="tab-button px-4 py-2 rounded-xl font-bold bg-orange-500 text-white" data-tab="reminders">Hatırlatıcı</div>
-            <button id="back-login" class="px-4 py-2 rounded-xl font-bold bg-red-500 text-white">Çıkış</button>
-        </div>
+    <div class="flex justify-center gap-4 mb-6">
+        <button id="show-login" class="px-4 py-2 bg-purple-600 text-white rounded-xl btn">Giriş</button>
+        <button id="show-register" class="px-4 py-2 bg-indigo-600 text-white rounded-xl btn">Kayıt Ol</button>
     </div>
 
-    <div class="p-6 text-gray-800 bg-white/90 min-h-[300px]">
-        <div id="tasks" class="tab-content tab-active space-y-4">
-            <p class="text-center text-gray-500 mt-10">Yükleniyor...</p>
-        </div>
+    <!-- LOGIN FORM -->
+    <div id="login-form">
+        <input id="login-email" type="email" placeholder="E-posta" class="w-full p-3 rounded-xl border mb-3">
+        <input id="login-password" type="password" placeholder="Şifre" class="w-full p-3 rounded-xl border mb-5">
+        <button id="login-btn" class="w-full py-3 bg-indigo-600 text-white rounded-xl btn">Giriş Yap</button>
+    </div>
 
-        <div id="passwords" class="tab-content space-y-4">
-            <p class="text-center text-gray-500 mt-10">Güvenli Kasa özelliği API'de aktif.</p>
-        </div>
+    <!-- REGISTER FORM -->
+    <div id="register-form" class="hidden">
+        <input id="reg-name" type="text" placeholder="Ad Soyad" class="w-full p-3 rounded-xl border mb-3">
+        <input id="reg-email" type="email" placeholder="E-posta" class="w-full p-3 rounded-xl border mb-3">
+        <input id="reg-password" type="password" placeholder="Şifre" class="w-full p-3 rounded-xl border mb-5">
+        <button id="register-btn" class="w-full py-3 bg-purple-600 text-white rounded-xl btn">Kayıt Ol</button>
+    </div>
+</div>
 
-        <div id="reminders" class="tab-content space-y-4">
-            <p class="text-center text-gray-500 mt-10">Hatırlatıcılar API'de aktif.</p>
-        </div>
+<!-- MAIN APP -->
+<div id="app-screen" class="hidden bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-2xl w-full max-w-4xl p-6">
+
+    <div class="flex justify-between mb-6">
+        <h1 class="text-3xl text-white font-bold">Velora</h1>
+        <button id="logout-btn" class="px-4 py-2 bg-red-600 text-white rounded-xl btn">Çıkış</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-3 mb-6">
+        <button class="tab-button px-4 py-2 bg-indigo-500 text-white rounded-xl btn" data-tab="tasks">Görevler</button>
+        <button class="tab-button px-4 py-2 bg-purple-500 text-white rounded-xl btn" data-tab="passwords">Kasa</button>
+        <button class="tab-button px-4 py-2 bg-orange-500 text-white rounded-xl btn" data-tab="reminders">Hatırlatıcılar</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="tasks" class="tab-content tab-active">
+        <h2 class="text-xl font-bold text-white mb-4">Görev Ekle</h2>
+        <input id="task-title" placeholder="Görev başlığı" class="w-full p-3 rounded-xl mb-2">
+        <textarea id="task-desc" placeholder="Açıklama" class="w-full p-3 rounded-xl mb-3"></textarea>
+        <button id="add-task" class="px-4 py-3 bg-indigo-600 text-white rounded-xl btn mb-4">Ekle</button>
+        <div id="task-list" class="space-y-3"></div>
+    </div>
+
+    <div id="passwords" class="tab-content">
+        <h2 class="text-xl font-bold text-white mb-4">Şifre Kaydet</h2>
+        <input id="pwd-account" placeholder="Hesap (Örn: Instagram)" class="w-full p-3 rounded-xl mb-2">
+        <input id="pwd-user" placeholder="Kullanıcı Adı" class="w-full p-3 rounded-xl mb-2">
+        <input id="pwd-pass" placeholder="Şifre" class="w-full p-3 rounded-xl mb-3">
+        <button id="add-password" class="px-4 py-3 bg-purple-600 text-white rounded-xl btn mb-4">Kasa’ya Ekle</button>
+        <div id="password-list" class="space-y-3"></div>
+    </div>
+
+    <div id="reminders" class="tab-content">
+        <h2 class="text-xl font-bold text-white mb-4">Hatırlatıcı Ekle</h2>
+        <input id="rem-note" placeholder="Hatırlatma Notu" class="w-full p-3 rounded-xl mb-2">
+        <input id="rem-time" type="time" class="w-full p-3 rounded-xl mb-3">
+        <button id="add-reminder" class="px-4 py-3 bg-orange-600 text-white rounded-xl btn mb-4">Ekle</button>
+        <div id="reminder-list" class="space-y-3"></div>
     </div>
 </div>
 
 <script>
-    const API_URL = "http://127.0.0.1:8000"; 
-    let currentUserId = null;
+const API = "http://127.0.0.1:8000";
+let USER_ID = null;
 
-    const loginBtn = document.getElementById('login-btn');
-    const backLogin = document.getElementById('back-login');
-    const loginScreen = document.getElementById('login-screen');
-    const demoScreen = document.getElementById('demo-screen');
-    const tasksContainer = document.getElementById('tasks');
+/* TAB SİSTEMİ */
+document.querySelectorAll(".tab-button").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("tab-active"));
+        document.getElementById(btn.dataset.tab).classList.add("tab-active");
+    });
+});
 
-    // --- GİRİŞ ---
-    loginBtn.addEventListener('click', async () => {
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value.trim();
+/* FORM GEÇİŞLERİ */
+document.getElementById("show-login").onclick = () => {
+    document.getElementById("login-form").classList.remove("hidden");
+    document.getElementById("register-form").classList.add("hidden");
+};
+document.getElementById("show-register").onclick = () => {
+    document.getElementById("register-form").classList.remove("hidden");
+    document.getElementById("login-form").classList.add("hidden");
+};
 
-        if(!email || !password) {
-            alert("Lütfen tüm alanları doldurun!");
-            return;
-        }
+/* KAYIT */
+document.getElementById("register-btn").onclick = async () => {
+    const full_name = document.getElementById("reg-name").value;
+    const email = document.getElementById("reg-email").value;
+    const password = document.getElementById("reg-password").value;
 
-        try {
-            const response = await fetch(`${API_URL}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                currentUserId = data.user_id;
-                alert("Hoşgeldin! " + data.mesaj);
-                loginScreen.classList.add('hidden');
-                demoScreen.classList.remove('hidden');
-                loadTasks();
-            } else {
-                alert("Hata: " + (data.detail || "Giriş başarısız"));
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Sunucuya bağlanılamadı! Docker çalışıyor mu?");
-        }
+    const r = await fetch(API + "/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name, email, password })
     });
 
-    // --- GÖREVLER ---
-    async function loadTasks() {
-        if (!currentUserId) return;
-        tasksContainer.innerHTML = "<p class='text-center'>Veriler alınıyor...</p>";
+    alert("Kayıt başarılı! Şimdi giriş yap.");
+};
 
-        try {
-            const response = await fetch(`${API_URL}/api/tasks/${currentUserId}`);
-            const tasks = await response.json();
+/* GİRİŞ */
+document.getElementById("login-btn").onclick = async () => {
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
 
-            tasksContainer.innerHTML = "";
-
-            if (tasks.length === 0) {
-                tasksContainer.innerHTML = "<div class='text-center p-4 text-gray-500'>Henüz hiç görev yok.<br>Swagger UI üzerinden ekleyebilirsin.</div>";
-                return;
-            }
-
-            tasks.forEach(task => {
-                const html = `
-                <div class="p-4 rounded-xl shadow-sm border flex items-center gap-3 bg-blue-50">
-                    <div class="w-6 h-6 bg-blue-500 rounded-sm pulse"></div>
-                    <div>
-                        <h4 class="font-bold">${task.title}</h4>
-                        <p class="text-sm text-gray-600">${task.description || ''}</p>
-                    </div>
-                </div>`;
-                tasksContainer.innerHTML += html;
-            });
-        } catch (error) {
-            tasksContainer.innerHTML = "<p class='text-red-500'>Veri hatası.</p>";
-        }
-    }
-
-    // --- ÇIKIŞ ---
-    backLogin.addEventListener('click', () => {
-        demoScreen.classList.add('hidden');
-        loginScreen.classList.remove('hidden');
-        document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
-        currentUserId = null;
+    const r = await fetch(API + "/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
     });
 
-    // --- TABS ---
-    const buttons = document.querySelectorAll('.tab-button');
-    const contents = document.querySelectorAll('.tab-content');
+    const data = await r.json();
 
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.getAttribute('data-tab');
-            contents.forEach(c => c.classList.remove('tab-active'));
-            document.getElementById(tab).classList.add('tab-active');
-        });
+    USER_ID = data.user_id;
+    document.getElementById("auth-screen").classList.add("hidden");
+    document.getElementById("app-screen").classList.remove("hidden");
+
+    loadTasks();
+    loadPasswords();
+    loadReminders();
+};
+
+/* ÇIKIŞ */
+document.getElementById("logout-btn").onclick = () => location.reload();
+
+/* GÖREV EKLE */
+document.getElementById("add-task").onclick = async () => {
+    const title = document.getElementById("task-title").value;
+    const description = document.getElementById("task-desc").value;
+
+    await fetch(API + `/api/tasks/${USER_ID}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description })
     });
+
+    loadTasks();
+};
+
+/* GÖREVLERİ YÜKLE */
+async function loadTasks() {
+    const r = await fetch(API + `/api/tasks/${USER_ID}`);
+    const list = await r.json();
+
+    const box = document.getElementById("task-list");
+    box.innerHTML = "";
+
+    list.forEach(item => {
+        box.innerHTML += `
+            <div class="p-4 bg-white rounded-xl shadow border">
+                <h3 class="font-bold">${item.title}</h3>
+                <p>${item.description || ""}</p>
+            </div>`;
+    });
+}
+
+/* ŞİFRE EKLE */
+document.getElementById("add-password").onclick = async () => {
+    const account = document.getElementById("pwd-account").value;
+    const username = document.getElementById("pwd-user").value;
+    const password = document.getElementById("pwd-pass").value;
+
+    await fetch(API + `/api/passwords/${USER_ID}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account, username, password })
+    });
+
+    loadPasswords();
+};
+
+/* ŞİFRELERİ YÜKLE */
+async function loadPasswords() {
+    const r = await fetch(API + `/api/passwords/${USER_ID}`);
+    const list = await r.json();
+
+    const box = document.getElementById("password-list");
+    box.innerHTML = "";
+
+    list.forEach(item => {
+        box.innerHTML += `
+            <div class="p-4 bg-white rounded-xl shadow border">
+                <h3 class="font-bold">${item.account}</h3>
+                <p>${item.username}</p>
+                <p class="text-sm text-gray-600">Güç: ${item.strength}</p>
+            </div>`;
+    });
+}
+
+/* HATIRLATICI EKLE */
+document.getElementById("add-reminder").onclick = async () => {
+    const note = document.getElementById("rem-note").value;
+    const time = document.getElementById("rem-time").value;
+
+    await fetch(API + `/api/reminders/${USER_ID}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note, time })
+    });
+
+    loadReminders();
+};
+
+/* HATIRLATICILARI YÜKLE */
+async function loadReminders() {
+    const r = await fetch(API + `/api/reminders/${USER_ID}`);
+    const list = await r.json();
+
+    const box = document.getElementById("reminder-list");
+    box.innerHTML = "";
+
+    list.forEach(item => {
+        box.innerHTML += `
+            <div class="p-4 bg-white rounded-xl shadow border">
+                <h3 class="font-bold">${item.note}</h3>
+                <p>${item.time}</p>
+            </div>`;
+    });
+}
 </script>
+
 </body>
 </html>
