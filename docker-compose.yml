@@ -11,7 +11,7 @@ services:
     build: .
     
     # Container için kolay hatırlanabilir bir isim veriyoruz
-    container_name: unutkanyoldas-container
+    container_name: velora-container
     
     # Port yönlendirmesi:
     # "HOST_PORTU:CONTAINER_PORTU"
