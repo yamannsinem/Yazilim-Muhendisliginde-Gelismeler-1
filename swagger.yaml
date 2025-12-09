@@ -3,8 +3,10 @@ info:
   title: Velora API
   description: Velora Mobil Uygulaması Backend API Dokümantasyonu
   version: 1.0.0
+
 servers:
   - url: http://127.0.0.1:8000
+
 tags:
   - name: Authentication
   - name: Tasks
@@ -12,10 +14,11 @@ tags:
   - name: Reminders
 
 paths:
+
   /auth/register:
     post:
       tags: [Authentication]
-      summary: Velora Kullanıcı Kaydı
+      summary: Velora kullanıcı kaydı
       requestBody:
         required: true
         content:
@@ -56,6 +59,7 @@ paths:
           schema: {type: string}
       responses:
         '200': {description: Başarılı}
+
     post:
       tags: [Tasks]
       summary: Yeni görev ekle
@@ -74,3 +78,66 @@ paths:
                 description: {type: string}
       responses:
         '200': {description: Görev eklendi}
+
+  /api/passwords/{user_id}:
+    get:
+      tags: [Passwords]
+      summary: Kullanıcının kayıtlı şifrelerini getir
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {description: Başarılı}
+
+    post:
+      tags: [Passwords]
+      summary: Yeni şifre ekle
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                account: {type: string}
+                username: {type: string}
+                password: {type: string}
+      responses:
+        '200': {description: Şifre kaydedildi}
+
+  /api/reminders/{user_id}:
+    get:
+      tags: [Reminders]
+      summary: Kullanıcı hatırlatıcılarını getir
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {description: Başarılı}
+
+    post:
+      tags: [Reminders]
+      summary: Yeni hatırlatıcı ekle
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: {type: string}
+                time: {type: string}
+      responses:
+        '200': {description: Hatırlatıcı eklendi}
