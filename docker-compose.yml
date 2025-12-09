@@ -5,13 +5,13 @@ version: '3.8'
 services:
   
   # 'api' adında bir servis tanımlıyoruz
-  api:
+  velora_api:
     # Dockerfile'ın bulunduğu dizini gösterir ('.', mevcut dizin demektir)
     # Docker Compose, bu dizindeki Dockerfile'ı bularak imajı build edecektir.
     build: .
     
     # Container için kolay hatırlanabilir bir isim veriyoruz
-    container_name: velora-container
+    container_name: velora-api
     
     # Port yönlendirmesi:
     # "HOST_PORTU:CONTAINER_PORTU"
