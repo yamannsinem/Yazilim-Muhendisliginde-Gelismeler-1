@@ -5,10 +5,8 @@ from typing import List, Optional
 from uuid import uuid4
 import re
 
-# Proje Adı Güncellendi
 app = FastAPI(title="Velora API", version="1.0.0")
 
-# --- AYARLAR ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,13 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- MOCK VERİTABANI ---
 users_db = []
 tasks_db = []
 passwords_db = []
 reminders_db = []
 
-# --- MODELLER ---
 class UserRegister(BaseModel):
     email: str
     password: str
@@ -62,34 +58,34 @@ class Reminder(ReminderCreate):
     id: str
     user_id: str
 
-# --- YARDIMCI FONKSİYONLAR ---
 def analyze_password_strength(password: str):
     strength = 0
+    rules = [
+        (r"[A-Z]", "Büyük harf ekle."),
+        (r"[a-z]", "Küçük harf ekle."),
+        (r"\d", "Rakam ekle."),
+        (r"[!@#$%^&*(),.?\":{}|<>]", "Özel karakter ekle.")
+    ]
     suggestions = []
-    if len(password) >= 8: strength += 1
-    else: suggestions.append("Şifre en az 8 karakter olmalı.")
-    if re.search(r"[A-Z]", password): strength += 1
-    else: suggestions.append("En az bir büyük harf ekle.")
-    if re.search(r"[a-z]", password): strength += 1
-    else: suggestions.append("En az bir küçük harf ekle.")
-    if re.search(r"\d", password): strength += 1
-    else: suggestions.append("En az bir rakam ekle.")
-    if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password): strength += 1
-    else: suggestions.append("En az bir özel karakter ekle.")
+
+    if len(password) < 8:
+        suggestions.append("En az 8 karakter olmalı.")
+    else:
+        strength += 1
+
+    for pattern, warn in rules:
+        if re.search(pattern, password):
+            strength += 1
+        else:
+            suggestions.append(warn)
+
     level = "Zayıf" if strength <= 2 else "Orta" if strength <= 4 else "Güçlü"
     return level, suggestions
 
-# --- ENDPOINTLER ---
-
-@app.get("/")
-async def root():
-    return {"mesaj": "Velora API çalışıyor 🚀"}
-
-# 1. Authentication
-@app.post("/auth/register", status_code=status.HTTP_201_CREATED, tags=["Authentication"])
+@app.post("/auth/register", status_code=201)
 async def register(user: UserRegister):
     if any(u["email"] == user.email for u in users_db):
-        raise HTTPException(status_code=400, detail="Bu e-posta zaten kayıtlı.")
+        raise HTTPException(400, "Bu e-posta zaten kayıtlı.")
     
     new_user = {
         "id": str(uuid4()),
@@ -98,53 +94,42 @@ async def register(user: UserRegister):
         "full_name": user.full_name,
     }
     users_db.append(new_user)
-    return {"mesaj": "Velora'ya hoş geldin!", "user_id": new_user["id"]}
+    return {"mesaj": "Kayıt başarılı!", "user_id": new_user["id"]}
 
-@app.post("/auth/login", tags=["Authentication"])
+@app.post("/auth/login")
 async def login(user: UserLogin):
-    user_data = next((u for u in users_db if u["email"] == user.email and u["password"] == user.password), None)
-    if not user_data:
-        raise HTTPException(status_code=401, detail="E-posta veya şifre hatalı!")
-    
-    return {"mesaj": "Giriş başarılı", "user_id": user_data["id"], "token": f"fake-jwt-{user_data['id']}"}
+    u = next((x for x in users_db if x["email"] == user.email and x["password"] == user.password), None)
+    if not u:
+        raise HTTPException(401, "Geçersiz bilgiler.")
+    return {"mesaj": "Giriş başarılı!", "user_id": u["id"], "token": f"fake-{u['id']}"}
 
-# 2. Görevler
-@app.post("/api/tasks/{user_id}", response_model=Task, tags=["Tasks"])
-async def create_task(user_id: str, task: TaskCreate):
-    new_task = Task(id=str(uuid4()), user_id=user_id, **task.dict())
-    tasks_db.append(new_task)
-    return new_task
+@app.post("/api/tasks/{uid}")
+async def add_task(uid: str, data: TaskCreate):
+    t = Task(id=str(uuid4()), user_id=uid, **data.dict())
+    tasks_db.append(t)
+    return t
 
-@app.get("/api/tasks/{user_id}", response_model=List[Task], tags=["Tasks"])
-async def get_tasks(user_id: str):
-    return [t for t in tasks_db if t.user_id == user_id]
+@app.get("/api/tasks/{uid}", response_model=List[Task])
+async def get_tasks(uid: str):
+    return [t for t in tasks_db if t.user_id == uid]
 
-# 3. Şifreler
-@app.post("/api/passwords/{user_id}", tags=["Passwords"])
-async def add_password(user_id: str, data: PasswordCreate):
-    level, suggestions = analyze_password_strength(data.password)
-    new_pwd = Password(
-        id=str(uuid4()),
-        user_id=user_id,
-        account=data.account,
-        username=data.username,
-        password=data.password,
-        strength=level,
-    )
-    passwords_db.append(new_pwd)
-    return {"mesaj": "Parola kasaya eklendi!", "strength": level, "suggestions": suggestions, "data": new_pwd}
+@app.post("/api/passwords/{uid}")
+async def add_pass(uid: str, data: PasswordCreate):
+    strength, sugg = analyze_password_strength(data.password)
+    p = Password(id=str(uuid4()), user_id=uid, strength=strength, **data.dict())
+    passwords_db.append(p)
+    return {"mesaj": "Kasa’ya eklendi!", "data": p, "öneriler": sugg}
 
-@app.get("/api/passwords/{user_id}", response_model=List[Password], tags=["Passwords"])
-async def get_passwords(user_id: str):
-    return [p for p in passwords_db if p.user_id == user_id]
+@app.get("/api/passwords/{uid}", response_model=List[Password])
+async def get_pass(uid: str):
+    return [p for p in passwords_db if p.user_id == uid]
 
-# 4. Hatırlatıcılar
-@app.post("/api/reminders/{user_id}", response_model=Reminder, tags=["Reminders"])
-async def create_reminder(user_id: str, data: ReminderCreate):
-    new_reminder = Reminder(id=str(uuid4()), user_id=user_id, **data.dict())
-    reminders_db.append(new_reminder)
-    return new_reminder
+@app.post("/api/reminders/{uid}")
+async def add_rem(uid: str, data: ReminderCreate):
+    r = Reminder(id=str(uuid4()), user_id=uid, **data.dict())
+    reminders_db.append(r)
+    return r
 
-@app.get("/api/reminders/{user_id}", response_model=List[Reminder], tags=["Reminders"])
-async def get_reminders(user_id: str):
-    return [r for r in reminders_db if r.user_id == user_id]
+@app.get("/api/reminders/{uid}", response_model=List[Reminder])
+async def get_rem(uid: str):
+    return [r for r in reminders_db if r.user_id == uid]
