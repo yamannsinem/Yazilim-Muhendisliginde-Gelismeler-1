@@ -8,14 +8,13 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# --- SQLALCHEMY (Veritabanı) Kütüphaneleri ---
+# --- SQLALCHEMY (Veritabanı) ---
 from sqlalchemy import create_engine, Column, String, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-app = FastAPI(title="Velora API", version="3.0.0")
+app = FastAPI(title="Velora API", version="3.1.0")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,15 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- VERİTABANI BAĞLANTISI ---
-# Docker Compose'dan gelen DATABASE_URL'i alıyoruz, yoksa varsayılanı kullanıyoruz.
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://velora:velorapass@localhost/veloradb")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- VERİTABANI MODELLERİ (Tablolar) ---
+# --- MODELLER ---
 class DBUser(Base):
     __tablename__ = "users"
     id = Column(String, primary_key=True, index=True)
@@ -63,10 +60,8 @@ class DBReminder(Base):
     note = Column(String)
     time = Column(String)
 
-# Tabloları oluştur (Eğer yoksa)
 Base.metadata.create_all(bind=engine)
 
-# Dependency (Her istekte veritabanı oturumu açıp kapatır)
 def get_db():
     db = SessionLocal()
     try:
@@ -74,7 +69,7 @@ def get_db():
     finally:
         db.close()
 
-# --- PYDANTIC MODELLERİ (Veri Doğrulama) ---
+# --- PYDANTIC ---
 class UserRegister(BaseModel):
     email: str
     password: str
@@ -119,7 +114,7 @@ class Reminder(ReminderCreate):
     class Config:
         orm_mode = True
 
-# --- GÜVENLİK (Basit Token) ---
+# --- GÜVENLİK ---
 security = HTTPBearer()
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -139,34 +134,23 @@ def analyze_password_strength(password: str):
 
 @app.post("/auth/register", status_code=201, tags=["Auth"])
 async def register(user: UserRegister, db: Session = Depends(get_db)):
-    # Email kontrolü
     existing_user = db.query(DBUser).filter(DBUser.email == user.email).first()
     if existing_user:
         raise HTTPException(400, "Bu e-posta zaten kayıtlı.")
     
-    new_user = DBUser(
-        id=str(uuid4()),
-        email=user.email,
-        password=user.password,
-        full_name=user.full_name
-    )
+    new_user = DBUser(id=str(uuid4()), email=user.email, password=user.password, full_name=user.full_name)
     db.add(new_user)
     db.commit()
-    db.refresh(new_user)
     return {"mesaj": "Kayıt başarılı!", "user_id": new_user.id}
 
 @app.post("/auth/login", tags=["Auth"])
 async def login(user: UserLogin, db: Session = Depends(get_db)):
-    # Veritabanından kullanıcıyı bul
     u = db.query(DBUser).filter(DBUser.email == user.email, DBUser.password == user.password).first()
     if not u:
         raise HTTPException(401, "Geçersiz bilgiler.")
-    
-    fake_token = f"fake-token-{u.id}"
-    return {"mesaj": "Giriş başarılı!", "user_id": u.id, "access_token": fake_token}
+    return {"mesaj": "Giriş başarılı!", "user_id": u.id, "access_token": f"fake-token-{u.id}"}
 
-# --- KORUMALI ALANLAR ---
-
+# --- TASKS ---
 @app.post("/api/tasks/{uid}", tags=["Tasks"], dependencies=[Depends(verify_token)])
 async def add_task(uid: str, data: TaskCreate, db: Session = Depends(get_db)):
     t = DBTask(id=str(uuid4()), user_id=uid, title=data.title, description=data.description)
@@ -179,6 +163,7 @@ async def add_task(uid: str, data: TaskCreate, db: Session = Depends(get_db)):
 async def get_tasks(uid: str, db: Session = Depends(get_db)):
     return db.query(DBTask).filter(DBTask.user_id == uid).all()
 
+# --- PASSWORDS (GÜNCELLENDİ: Silme ve Düzenleme Eklendi) ---
 @app.post("/api/passwords/{uid}", tags=["Passwords"], dependencies=[Depends(verify_token)])
 async def add_pass(uid: str, data: PasswordCreate, db: Session = Depends(get_db)):
     strength = analyze_password_strength(data.password)
@@ -192,6 +177,33 @@ async def add_pass(uid: str, data: PasswordCreate, db: Session = Depends(get_db)
 async def get_pass(uid: str, db: Session = Depends(get_db)):
     return db.query(DBPassword).filter(DBPassword.user_id == uid).all()
 
+# SİLME (DELETE)
+@app.delete("/api/passwords/{uid}/{item_id}", tags=["Passwords"], dependencies=[Depends(verify_token)])
+async def delete_pass(uid: str, item_id: str, db: Session = Depends(get_db)):
+    item = db.query(DBPassword).filter(DBPassword.id == item_id, DBPassword.user_id == uid).first()
+    if not item:
+        raise HTTPException(404, "Kayıt bulunamadı")
+    db.delete(item)
+    db.commit()
+    return {"mesaj": "Silindi"}
+
+# GÜNCELLEME (PUT)
+@app.put("/api/passwords/{uid}/{item_id}", tags=["Passwords"], dependencies=[Depends(verify_token)])
+async def update_pass(uid: str, item_id: str, data: PasswordCreate, db: Session = Depends(get_db)):
+    item = db.query(DBPassword).filter(DBPassword.id == item_id, DBPassword.user_id == uid).first()
+    if not item:
+        raise HTTPException(404, "Kayıt bulunamadı")
+    
+    item.account = data.account
+    item.username = data.username
+    item.password = data.password
+    item.strength = analyze_password_strength(data.password)
+    
+    db.commit()
+    db.refresh(item)
+    return {"mesaj": "Güncellendi", "data": item}
+
+# --- REMINDERS ---
 @app.post("/api/reminders/{uid}", tags=["Reminders"], dependencies=[Depends(verify_token)])
 async def add_rem(uid: str, data: ReminderCreate, db: Session = Depends(get_db)):
     r = DBReminder(id=str(uuid4()), user_id=uid, **data.dict())
